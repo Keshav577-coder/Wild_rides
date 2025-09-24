@@ -4,20 +4,24 @@ var WildRydes = window.WildRydes || {};
 WildRydes.map = WildRydes.map || {};
 
 (function rideScopeWrapper($) {
-    var authToken;
-    WildRydes.authToken.then(function setAuthToken(token) {
-        if (token) {
-            authToken = token;
-        } else {
-            window.location.href = '/signin.html';
-        }
-    }).catch(function handleTokenError(error) {
-        alert(error);
-        window.location.href = '/signin.html';
-    });
+    // Moved the authToken logic into a function to be called on click
+    function handleRequestClick(event) {
+        var pickupLocation = WildRydes.map.selectedPoint;
+        event.preventDefault();
 
-    function requestUnicorn(pickupLocation) {
-        // The token is now safely available here
+        WildRydes.authToken.then(function setAuthToken(token) {
+            if (token) {
+                requestUnicorn(token, pickupLocation);
+            } else {
+                window.location.href = '/signin.html';
+            }
+        }).catch(function handleTokenError(error) {
+            alert(error);
+            window.location.href = '/signin.html';
+        });
+    }
+
+    function requestUnicorn(authToken, pickupLocation) {
         $.ajax({
             method: 'POST',
             url: _config.api.invokeUrl + '/ride',
@@ -35,7 +39,7 @@ WildRydes.map = WildRydes.map || {};
             error: function ajaxError(jqXHR, textStatus, errorThrown) {
                 console.error('Error requesting ride: ', textStatus, ', Details: ', errorThrown);
                 console.error('Response: ', jqXHR.responseText);
-                alert('An error occured when requesting your unicorn:\n' + jqXHR.responseText);
+                alert('An error occurred when requesting your unicorn:\n' + jqXHR.responseText);
             }
         });
     }
@@ -76,12 +80,6 @@ WildRydes.map = WildRydes.map || {};
         var requestButton = $('#request');
         requestButton.text('Request Unicorn');
         requestButton.prop('disabled', false);
-    }
-
-    function handleRequestClick(event) {
-        var pickupLocation = WildRydes.map.selectedPoint;
-        event.preventDefault();
-        requestUnicorn(pickupLocation);
     }
 
     function animateArrival(callback) {
